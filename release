@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+# find script location
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# ensure build harness has been initialized
+if [[ ! -d "${DIR}/build-harness/bashlib" ]]; then make init; fi
+# shellcheck source=./build-harness/bashlib/bashopts.sh
+source "${DIR}/build-harness/bashlib/bashopts.sh"
+# shellcheck source=./build-harness/bashlib/bashui.sh
+source "${DIR}/build-harness/bashlib/bashui.sh"
+
+
+function usage() {
+  cat <<- EOF
+
+  add a tag to master branch and publish a release
+
+  usage: $0 <tag>
+
+    tag: (v1.1.1)
+
+EOF
+}
+
+function main() {
+  action "checkout master branch"
+  git checkout master
+  ok
+
+  action "add tag ${TAG}"
+  git tag "$TAG"
+  ok
+
+  action "publish tag ${TAG}"
+  git push origin "$TAG"
+  ok
+
+  action "build and publish release"
+  goreleaser release --rm-dist
+  ok
+}
+
+[ "$#" -lt 1 ] && usage && die
+
+TAG="${1}"
+
+banner
+
+bot "preparing release version ${TAG}"
+
+main "$@"
